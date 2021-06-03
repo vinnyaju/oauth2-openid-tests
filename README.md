@@ -10,10 +10,12 @@ Esse repositório, em construção, contem uma série de scripts que montam um c
 
 ## O que fazer?
 
-Clone o repositório e dê um:
+Clone o repositório, coloque o seu usuário Github no valor da variável GithubUser no Vagrantfile e dê um:
 
     vagrant up
 
 Quando terminar:
 
     vagrant ssh
+
+Acesse o IP da VM, porta 8080 pelo browser, interface do Keycloack, login / password: admin / Pa55w0rd
