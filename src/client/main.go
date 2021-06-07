@@ -18,6 +18,7 @@ func main() {
 	fmt.Println("OK")
 	http.HandleFunc("/", home)
 	http.HandleFunc("/login", login)
+	http.HandleFunc("/authCodeRedirect", authCodeRedirect)
 	http.ListenAndServe(":3000", nil)
 }
 
@@ -37,7 +38,15 @@ func login(w http.ResponseWriter, r *http.Request) {
 	qs.Add("state", "123abc")
 	qs.Add("client_id", "billingApp")
 	qs.Add("response_type", "code")
+	qs.Add("redirect_uri", "http://localhost:3000/authCodeRedirect")
 
 	req.URL.RawQuery = qs.Encode()
 	http.Redirect(w, r, req.URL.String(), http.StatusFound)
+}
+
+func authCodeRedirect(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Request query: %v", r.URL.Query())
+
+	t := template.Must(template.ParseFiles("template/index.html"))
+	t.Execute(w, nil)
 }
