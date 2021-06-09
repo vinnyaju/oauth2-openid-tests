@@ -128,6 +128,7 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ByteBody: %v", byteBody)
 	log.Printf("AccessToken: %v", appVar.AccessToken)
 
-	t := template.Must(template.ParseFiles("template/index.html"))
-	t.Execute(w, appVar)
+	http.Redirect(w, r, "/", http.StatusFound)
+	// t := template.Must(template.ParseFiles("template/index.html"))
+	// t.Execute(w, appVar)
 }
