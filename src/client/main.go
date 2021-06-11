@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"reflect"
+	"runtime"
 	"strings"
 
 	"learn.oauth.client/model"
@@ -42,14 +44,30 @@ type AppVar struct {
 
 var appVar = AppVar{}
 
+func init() {
+	log.SetFlags(log.Ldate + log.Ltime + log.Lmicroseconds + log.LUTC)
+}
+
 func main() {
 	fmt.Println("OK")
-	http.HandleFunc("/", home)
-	http.HandleFunc("/login", login)
-	http.HandleFunc("/exchangeToken", exchangeToken)
-	http.HandleFunc("/logout", logout)
-	http.HandleFunc("/authCodeRedirect", authCodeRedirect)
+	http.HandleFunc("/", enableLog(home))
+	http.HandleFunc("/login", enableLog(login))
+	http.HandleFunc("/exchangeToken", enableLog(exchangeToken))
+	http.HandleFunc("/logout", enableLog(logout))
+	http.HandleFunc("/authCodeRedirect", enableLog(authCodeRedirect))
 	http.ListenAndServe(":3000", nil)
+}
+
+func enableLog(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+
+	handlerName := runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.SetPrefix(handlerName + " ")
+		log.Println("---> " + handlerName)
+		log.Printf("request: %v", r.RequestURI)
+		handler(w, r)
+		log.Println("<--- " + handlerName + "\n")
+	}
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -136,8 +154,6 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 	appVar.AccessToken = accessTokenResponse.AccessToken
 	appVar.RefreshToken = accessTokenResponse.RefreshToken
 	appVar.Scope = accessTokenResponse.Scope
-
-	log.Printf("ByteBody: %v", byteBody)
 	log.Printf("AccessToken: %v", appVar.AccessToken)
 	log.Printf("RefreshToken: %v", appVar.RefreshToken)
 	log.Printf("Scope: %v", appVar.Scope)
