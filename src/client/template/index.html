@@ -34,13 +34,12 @@
     <div class="col-lg-8 mx-auto p-3 py-md-5">
         <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
           <a href="/" class="d-flex align-items-center text-dark text-decoration-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-key-fill" viewBox="0 0 16 16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-key-fill" viewBox="0 0 16 16">
                 <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-              </svg>
-            <span class="fs-4">OAuth2 - Client</span>
+            </svg>
+            <span class="fs-4">OAuth2 - Client</span> 
           </a>
         </header>
-      
         <main>
           <h1>Um cliente de teste</h1>
             <!--
@@ -80,9 +79,15 @@
           </div>
           <hr class="col-3 col-md-12 mb-5">
           <div class="row">
-            <div>
+            <div class="col-3 col-md-6 mb-5">
               <h2>Access Token</h2>
               <p style="word-break: break-all;">{{.AccessToken}}</p>      
+            </div>
+            <div class="col-3 col-md-6 mb-5">
+              <h2>Scope</h2>
+              <p style="word-break: break-all;">{{.Scope}}</p> 
+              <h2>Refresh Token</h2>
+              <p style="word-break: break-all;">{{.RefreshToken}}</p>      
             </div>
           </div>
         </main>

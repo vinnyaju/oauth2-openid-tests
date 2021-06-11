@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"learn.oauth.client/model"
 )
 
 var config = struct {
@@ -33,6 +36,8 @@ type AppVar struct {
 	AuthCode     string
 	SessionState string
 	AccessToken  string
+	RefreshToken string
+	Scope        string
 }
 
 var appVar = AppVar{}
@@ -123,10 +128,19 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		return
 	}
-	appVar.AccessToken = string(byteBody)
+
+	accessTokenResponse := &model.AccessTokenResponse{}
+
+	json.Unmarshal(byteBody, accessTokenResponse)
+
+	appVar.AccessToken = accessTokenResponse.AccessToken
+	appVar.RefreshToken = accessTokenResponse.RefreshToken
+	appVar.Scope = accessTokenResponse.Scope
 
 	log.Printf("ByteBody: %v", byteBody)
 	log.Printf("AccessToken: %v", appVar.AccessToken)
+	log.Printf("RefreshToken: %v", appVar.RefreshToken)
+	log.Printf("Scope: %v", appVar.Scope)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 	// t := template.Must(template.ParseFiles("template/index.html"))
