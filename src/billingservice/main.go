@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,9 +13,14 @@ func init() {
 	log.SetFlags(log.Ldate + log.Ltime + log.Lmicroseconds + log.LUTC)
 }
 
+type Billing struct {
+	Services []string `json:"services"`
+}
+
 func main() {
 	fmt.Println("OK")
 	http.HandleFunc("/", enableLog(home))
+	http.HandleFunc("/billing/v1/services", enableLog(services))
 	http.ListenAndServe(":4000", nil)
 }
 
@@ -32,4 +38,18 @@ func enableLog(handler func(http.ResponseWriter, *http.Request)) func(http.Respo
 
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "foi")
+}
+
+func services(w http.ResponseWriter, r *http.Request) {
+	s := Billing{
+		Services: []string{
+			"eletricidade",
+			"telefonia",
+			"internet",
+			"água",
+		},
+	}
+	encoder := json.NewEncoder(w)
+	w.Header().Add("Content-Type", "application/json")
+	encoder.Encode(s)
 }

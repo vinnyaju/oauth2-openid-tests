@@ -28,7 +28,7 @@
         }        
     </style>
     <title>OAuth2 - Client</title>
-    <link rel="icon" href="data:" />
+    <link rel="icon" href="data:" /> 
   </head>
   <body>
     
@@ -51,7 +51,7 @@
             <a href="/logout" class="btn btn-primary btn-lg px-4">Logout</a>
           </div>
       
-          <hr class="col-3 col-md-2 mb-5">
+          <hr class="col-3 col-md-2 mb-2" />
       
           <div class="row g-5">
             <div class="col-md-6">
@@ -78,19 +78,32 @@
               -->
             </div>
           </div>
-          <hr class="col-3 col-md-12 mb-5">
+
+          <hr class="col-3 col-md-2 mb-2" />
+
           <div class="row">
-            <div class="col-3 col-md-6 mb-5">
+            <div class="col-3 col-md-6 mb-2">
               <h2>Access Token</h2>
               <p style="word-break: break-all;">{{.AccessToken}}</p>      
             </div>
-            <div class="col-3 col-md-6 mb-5">
+            <div class="col-3 col-md-6 mb-2">
               <h2>Scope</h2>
               <p style="word-break: break-all;">{{.Scope}}</p> 
               <h2>Refresh Token</h2>
               <p style="word-break: break-all;">{{.RefreshToken}}</p>      
             </div>
           </div>
+
+          <hr class="col-3 col-md-2 mb-2" />
+
+          <div class="row">
+            <div class="col-3 col-md-12 mb-2">
+              <a href="/services" class="btn btn-primary btn-lg px-4">Chamar Endpoint: Listar serviços</a>
+            </div>
+            {{ block "services" .Services }}
+              &nbsp;
+            {{ end }}
+          </div>          
         </main>
         <footer class="pt-5 my-5 text-muted border-top">
           Criado por vinnyaju para teste &middot; &copy; 2021

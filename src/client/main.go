@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -11,6 +12,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
 	"learn.oauth.client/model"
 )
@@ -23,6 +25,7 @@ var config = struct {
 	clientPWD           string
 	authCodeCallback    string
 	tokenIssuerURL      string
+	servicesEndpointURI string
 }{
 	authURL:             "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/auth",
 	logoutURL:           "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/logout",
@@ -31,6 +34,7 @@ var config = struct {
 	clientID:            "billingApp",
 	clientPWD:           "3bd73711-a702-4494-82ea-d280ea5a855c",
 	authCodeCallback:    "http://localhost:3000/authCodeRedirect",
+	servicesEndpointURI: "http://localhost:4000/billing/v1/services",
 }
 
 //Variáveis privadas da aplicação.
@@ -40,6 +44,7 @@ type AppVar struct {
 	AccessToken  string
 	RefreshToken string
 	Scope        string
+	Services     []string
 }
 
 var appVar = AppVar{}
@@ -53,6 +58,7 @@ func main() {
 	http.HandleFunc("/", enableLog(home))
 	http.HandleFunc("/login", enableLog(login))
 	http.HandleFunc("/exchangeToken", enableLog(exchangeToken))
+	http.HandleFunc("/services", enableLog(services))
 	http.HandleFunc("/logout", enableLog(logout))
 	http.HandleFunc("/authCodeRedirect", enableLog(authCodeRedirect))
 	http.ListenAndServe(":3000", nil)
@@ -75,22 +81,6 @@ func home(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, appVar)
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
-
-	req, err := http.NewRequest("GET", config.logoutURL, nil)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	qs := url.Values{}
-	qs.Add("redirect_uri", config.afterLogoutRecirect)
-
-	req.URL.RawQuery = qs.Encode()
-	appVar = AppVar{}
-	http.Redirect(w, r, req.URL.String(), http.StatusFound)
-}
-
 func login(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest("GET", config.authURL, nil)
 	if err != nil {
@@ -105,6 +95,22 @@ func login(w http.ResponseWriter, r *http.Request) {
 	qs.Add("redirect_uri", config.authCodeCallback)
 
 	req.URL.RawQuery = qs.Encode()
+	http.Redirect(w, r, req.URL.String(), http.StatusFound)
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+
+	req, err := http.NewRequest("GET", config.logoutURL, nil)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	qs := url.Values{}
+	qs.Add("redirect_uri", config.afterLogoutRecirect)
+
+	req.URL.RawQuery = qs.Encode()
+	appVar = AppVar{}
 	http.Redirect(w, r, req.URL.String(), http.StatusFound)
 }
 
@@ -161,4 +167,49 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 	// t := template.Must(template.ParseFiles("template/index.html"))
 	// t.Execute(w, appVar)
+}
+
+func services(w http.ResponseWriter, r *http.Request) {
+
+	t := template.Must(template.ParseFiles("template/index.html", "template/services.html"))
+
+	//request
+	req, err := http.NewRequest("GET", config.servicesEndpointURI, nil)
+	if err != nil {
+		log.Print(err)
+		t.Execute(w, appVar)
+		return
+	}
+	//client
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 500*time.Millisecond)
+
+	defer cancelFunc()
+
+	c := http.Client{}
+	res, err := c.Do(req.WithContext(ctx))
+	if err != nil {
+		log.Print(err)
+		t.Execute(w, appVar)
+		return
+	}
+
+	//process response
+	byteBody, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		log.Print(err)
+		t.Execute(w, appVar)
+		return
+	}
+
+	billingResponse := &model.Billing{}
+	err = json.Unmarshal(byteBody, billingResponse)
+	appVar.Services = billingResponse.Services
+
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	t.Execute(w, appVar)
 }
