@@ -180,9 +180,10 @@ func services(w http.ResponseWriter, r *http.Request) {
 		t.Execute(w, appVar)
 		return
 	}
+	req.Header.Add("Authorization", "Bearer "+appVar.AccessToken)
+
 	//client
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 500*time.Millisecond)
-
 	defer cancelFunc()
 
 	c := http.Client{}
@@ -194,6 +195,11 @@ func services(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//process response
+	if res.StatusCode != 200 {
+		log.Println("Status Code returned: ", res.StatusCode)
+		log.Println("Status returned: ", res.Status)
+	}
+
 	byteBody, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 	if err != nil {
