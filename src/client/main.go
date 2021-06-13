@@ -120,7 +120,8 @@ func authCodeRedirect(w http.ResponseWriter, r *http.Request) {
 	appVar.SessionState = r.URL.Query().Get("session_state")
 	r.URL.RawQuery = ""
 	fmt.Printf("Request query: %+v\n", appVar)
-	http.Redirect(w, r, "/", http.StatusFound)
+	//http.Redirect(w, r, "/", http.StatusFound)
+	exchangeToken(w, r)
 }
 
 func exchangeToken(w http.ResponseWriter, r *http.Request) {
