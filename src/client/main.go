@@ -45,6 +45,7 @@ type AppVar struct {
 	RefreshToken string
 	Scope        string
 	Services     []string
+	ErrorMessage string
 }
 
 var appVar = AppVar{}
@@ -180,7 +181,9 @@ func services(w http.ResponseWriter, r *http.Request) {
 		t.Execute(w, appVar)
 		return
 	}
-	req.Header.Add("Authorization", "Bearer "+appVar.AccessToken)
+	if appVar.AccessToken != "" {
+		req.Header.Add("Authorization", "Bearer "+appVar.AccessToken)
+	}
 
 	//client
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -195,10 +198,6 @@ func services(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//process response
-	if res.StatusCode != 200 {
-		log.Println("Status Code returned: ", res.StatusCode)
-		log.Println("Status returned: ", res.Status)
-	}
 
 	byteBody, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
@@ -206,6 +205,22 @@ func services(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		t.Execute(w, appVar)
 		return
+	}
+
+	if res.StatusCode != 200 {
+		log.Println("Status Code returned: ", res.StatusCode)
+		log.Println("Status returned: ", res.Status)
+		errorResponse := &model.ErrorResponse{}
+		err = json.Unmarshal(byteBody, errorResponse)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+
+		appVar.ErrorMessage = errorResponse.Error
+		t.Execute(w, appVar)
+	} else {
+		appVar.ErrorMessage = ""
 	}
 
 	billingResponse := &model.Billing{}

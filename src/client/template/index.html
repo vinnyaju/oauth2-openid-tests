@@ -101,8 +101,9 @@
               <a href="/services" class="btn btn-primary btn-lg px-4">Chamar Endpoint: Listar serviços</a>
             </div>
             {{ block "services" .Services }}
-              &nbsp;
             {{ end }}
+
+            {{.ErrorMessage}}
           </div>          
         </main>
         <footer class="pt-5 my-5 text-muted border-top">
