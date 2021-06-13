@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -64,25 +65,20 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 	token, err := getToken(r)
 	if err != nil {
 		log.Println(err)
-		s := &BillingError{Error: err.Error()}
-		encoder := json.NewEncoder(w)
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		encoder.Encode(s)
+		buildErrorMessage(w, err.Error())
 		return
 	}
 
 	log.Println("Token Recebido: ", token)
 
 	//Validar o token
-	if !validateToken(token) {
-		s := &BillingError{Error: "Token inválido."}
-		encoder := json.NewEncoder(w)
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		encoder.Encode(s)
+	tokenValid, tokenClaim := validateTokenAndExtractClaim(token)
+	if !tokenValid {
+		buildErrorMessage(w, "Token inválido.")
 		return
 	}
+
+	log.Println("Scopes: ", tokenClaim.Scope)
 
 	s := Billing{
 		Utilities: []string{
@@ -127,7 +123,7 @@ func getToken(r *http.Request) (string, error) {
 	return token, fmt.Errorf("Access token não informado")
 }
 
-func validateToken(token string) bool {
+func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
 
 	//Request
 	form := url.Values{}
@@ -139,7 +135,7 @@ func validateToken(token string) bool {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		log.Print(err)
-		return false
+		return false, model.TokenIntrospect{}
 	}
 
 	//Client
@@ -147,7 +143,7 @@ func validateToken(token string) bool {
 	res, err := c.Do(req)
 	if err != nil {
 		log.Print(err)
-		return false
+		return false, model.TokenIntrospect{}
 	}
 
 	//Process Response
@@ -156,14 +152,14 @@ func validateToken(token string) bool {
 	if res.StatusCode != 200 {
 		log.Println("Status Code returned: ", req.Response.StatusCode)
 		log.Println("Status returned: ", req.Response.Status)
-		return false
+		return false, model.TokenIntrospect{}
 	}
 
 	byteBody, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 	if err != nil {
 		log.Print(err)
-		return false
+		return false, model.TokenIntrospect{}
 	}
 
 	introspect := &model.TokenIntrospect{}
@@ -171,8 +167,25 @@ func validateToken(token string) bool {
 
 	if err != nil {
 		log.Println(err)
-		return false
+		return false, model.TokenIntrospect{}
 	}
 
-	return introspect.Active
+	return introspect.Active, *introspect
+}
+
+func buildErrorMessage(w http.ResponseWriter, message string) {
+	s := &BillingError{Error: message}
+	encoder := json.NewEncoder(w)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	encoder.Encode(s)
+}
+
+func getClaimBytes(token string) ([]byte, error) {
+	tokenParts := strings.Split(token, ".")
+	claim, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
+	if err != nil {
+		return []byte{}, err
+	}
+	return claim, err
 }
