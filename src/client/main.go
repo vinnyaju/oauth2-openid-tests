@@ -172,13 +172,13 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 
 func utilities(w http.ResponseWriter, r *http.Request) {
 
-	t := template.Must(template.ParseFiles("template/index.html", "template/utilities.html"))
+	utilitiesTemplate := template.Must(template.ParseFiles("template/index.html", "template/utilities.html"))
 
 	//request
 	req, err := http.NewRequest("GET", config.utilitiesEndpointURI, nil)
 	if err != nil {
 		log.Print(err)
-		t.Execute(w, appVar)
+		utilitiesTemplate.Execute(w, appVar)
 		return
 	}
 	if appVar.AccessToken != "" {
@@ -193,7 +193,7 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 	res, err := c.Do(req.WithContext(ctx))
 	if err != nil {
 		log.Print(err)
-		t.Execute(w, appVar)
+		utilitiesTemplate.Execute(w, appVar)
 		return
 	}
 
@@ -203,9 +203,11 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 	defer res.Body.Close()
 	if err != nil {
 		log.Print(err)
-		t.Execute(w, appVar)
+		utilitiesTemplate.Execute(w, appVar)
 		return
 	}
+
+	log.Println("Service Response: ", string(byteBody))
 
 	if res.StatusCode != 200 {
 		log.Println("Status Code returned: ", res.StatusCode)
@@ -218,7 +220,8 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 		}
 
 		appVar.ErrorMessage = errorResponse.Error
-		t.Execute(w, appVar)
+		utilitiesTemplate.Execute(w, appVar)
+		return
 	} else {
 		appVar.ErrorMessage = ""
 	}
@@ -232,5 +235,5 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t.Execute(w, appVar)
+	utilitiesTemplate.Execute(w, appVar)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -69,7 +68,7 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Token Recebido: ", token)
+	//log.Println("Token Recebido: ", token)
 
 	//Validar o token
 	tokenValid, tokenClaim := validateTokenAndExtractClaim(token)
@@ -78,7 +77,12 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Scopes: ", tokenClaim.Scope)
+	//Validar se há o escopo necessário à execução deste serviço
+	//log.Println("Scopes: ", tokenClaim.Scope)
+	if !strings.Contains(tokenClaim.Scope, "getUtilitiesService") {
+		buildErrorMessage(w, "O escopo necessário à execução deste serviço não está presente no token informado.")
+		return
+	}
 
 	s := Billing{
 		Utilities: []string{
@@ -123,7 +127,7 @@ func getToken(r *http.Request) (string, error) {
 	return token, fmt.Errorf("Access token não informado")
 }
 
-func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
+func validateTokenAndExtractClaim(token string) (bool, *model.TokenIntrospect) {
 
 	//Request
 	form := url.Values{}
@@ -135,7 +139,7 @@ func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		log.Print(err)
-		return false, model.TokenIntrospect{}
+		return false, nil
 	}
 
 	//Client
@@ -143,7 +147,7 @@ func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
 	res, err := c.Do(req)
 	if err != nil {
 		log.Print(err)
-		return false, model.TokenIntrospect{}
+		return false, nil
 	}
 
 	//Process Response
@@ -152,14 +156,14 @@ func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
 	if res.StatusCode != 200 {
 		log.Println("Status Code returned: ", req.Response.StatusCode)
 		log.Println("Status returned: ", req.Response.Status)
-		return false, model.TokenIntrospect{}
+		return false, nil
 	}
 
 	byteBody, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 	if err != nil {
 		log.Print(err)
-		return false, model.TokenIntrospect{}
+		return false, nil
 	}
 
 	introspect := &model.TokenIntrospect{}
@@ -167,10 +171,10 @@ func validateTokenAndExtractClaim(token string) (bool, model.TokenIntrospect) {
 
 	if err != nil {
 		log.Println(err)
-		return false, model.TokenIntrospect{}
+		return false, nil
 	}
 
-	return introspect.Active, *introspect
+	return introspect.Active, introspect
 }
 
 func buildErrorMessage(w http.ResponseWriter, message string) {
@@ -179,13 +183,4 @@ func buildErrorMessage(w http.ResponseWriter, message string) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 	encoder.Encode(s)
-}
-
-func getClaimBytes(token string) ([]byte, error) {
-	tokenParts := strings.Split(token, ".")
-	claim, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
-	if err != nil {
-		return []byte{}, err
-	}
-	return claim, err
 }
