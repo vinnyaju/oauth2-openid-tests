@@ -1,16 +1,4 @@
-package token_structures
-
-type RealmAccess struct {
-	Roles []string `json:"roles"`
-}
-
-type Account struct {
-	Roles []string `json:"roles"`
-}
-
-type ResourceAccess struct {
-	Account Account `json:"account"`
-}
+package model
 
 type TokenIntrospect struct {
 	Exp               int            `json:"exp"`

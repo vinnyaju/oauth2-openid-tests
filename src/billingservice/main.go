@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"learn.oauth.billingservice/token_structures"
+	"learn.oauth.billingservice/model"
 )
 
 func init() {
@@ -39,7 +39,7 @@ var config = struct {
 func main() {
 	fmt.Println("OK")
 	http.HandleFunc("/", enableLog(home))
-	http.HandleFunc("/billing/v1/services", enableLog(services))
+	http.HandleFunc("/billing/v1/services", enableLog(utilities))
 	http.ListenAndServe(":4000", nil)
 }
 
@@ -59,7 +59,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "foi")
 }
 
-func services(w http.ResponseWriter, r *http.Request) {
+func utilities(w http.ResponseWriter, r *http.Request) {
 
 	token, err := getToken(r)
 	if err != nil {
@@ -166,7 +166,7 @@ func validateToken(token string) bool {
 		return false
 	}
 
-	introspect := &token_structures.TokenIntrospect{}
+	introspect := &model.TokenIntrospect{}
 	err = json.Unmarshal(byteBody, introspect)
 
 	if err != nil {
