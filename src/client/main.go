@@ -18,23 +18,23 @@ import (
 )
 
 var config = struct {
-	authURL             string
-	logoutURL           string
-	afterLogoutRecirect string
-	clientID            string
-	clientPWD           string
-	authCodeCallback    string
-	tokenIssuerURL      string
-	servicesEndpointURI string
+	authURL              string
+	logoutURL            string
+	afterLogoutRecirect  string
+	clientID             string
+	clientPWD            string
+	authCodeCallback     string
+	tokenIssuerURL       string
+	utilitiesEndpointURI string
 }{
-	authURL:             "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/auth",
-	logoutURL:           "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/logout",
-	tokenIssuerURL:      "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/token",
-	afterLogoutRecirect: "http://localhost:3000/",
-	clientID:            "billingApp",
-	clientPWD:           "3bd73711-a702-4494-82ea-d280ea5a855c",
-	authCodeCallback:    "http://localhost:3000/authCodeRedirect",
-	servicesEndpointURI: "http://localhost:4000/billing/v1/services",
+	authURL:              "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/auth",
+	logoutURL:            "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/logout",
+	tokenIssuerURL:       "http://192.168.100.101:8080/auth/realms/learningApp/protocol/openid-connect/token",
+	afterLogoutRecirect:  "http://localhost:3000/",
+	clientID:             "billingApp",
+	clientPWD:            "3bd73711-a702-4494-82ea-d280ea5a855c",
+	authCodeCallback:     "http://localhost:3000/authCodeRedirect",
+	utilitiesEndpointURI: "http://localhost:4000/billing/v1/utilities",
 }
 
 //Variáveis privadas da aplicação.
@@ -44,7 +44,7 @@ type AppVar struct {
 	AccessToken  string
 	RefreshToken string
 	Scope        string
-	Services     []string
+	Utilities    []string
 	ErrorMessage string
 }
 
@@ -59,7 +59,7 @@ func main() {
 	http.HandleFunc("/", enableLog(home))
 	http.HandleFunc("/login", enableLog(login))
 	http.HandleFunc("/exchangeToken", enableLog(exchangeToken))
-	http.HandleFunc("/services", enableLog(services))
+	http.HandleFunc("/utilities", enableLog(utilities))
 	http.HandleFunc("/logout", enableLog(logout))
 	http.HandleFunc("/authCodeRedirect", enableLog(authCodeRedirect))
 	http.ListenAndServe(":3000", nil)
@@ -170,12 +170,12 @@ func exchangeToken(w http.ResponseWriter, r *http.Request) {
 	// t.Execute(w, appVar)
 }
 
-func services(w http.ResponseWriter, r *http.Request) {
+func utilities(w http.ResponseWriter, r *http.Request) {
 
-	t := template.Must(template.ParseFiles("template/index.html", "template/services.html"))
+	t := template.Must(template.ParseFiles("template/index.html", "template/utilities.html"))
 
 	//request
-	req, err := http.NewRequest("GET", config.servicesEndpointURI, nil)
+	req, err := http.NewRequest("GET", config.utilitiesEndpointURI, nil)
 	if err != nil {
 		log.Print(err)
 		t.Execute(w, appVar)
@@ -225,7 +225,7 @@ func services(w http.ResponseWriter, r *http.Request) {
 
 	billingResponse := &model.Billing{}
 	err = json.Unmarshal(byteBody, billingResponse)
-	appVar.Services = billingResponse.Services
+	appVar.Utilities = billingResponse.Utilities
 
 	if err != nil {
 		log.Print(err)

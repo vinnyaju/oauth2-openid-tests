@@ -19,7 +19,7 @@ func init() {
 }
 
 type Billing struct {
-	Services []string `json:"services"`
+	Utilities []string `json:"utilities"`
 }
 
 type BillingError struct {
@@ -39,7 +39,7 @@ var config = struct {
 func main() {
 	fmt.Println("OK")
 	http.HandleFunc("/", enableLog(home))
-	http.HandleFunc("/billing/v1/services", enableLog(utilities))
+	http.HandleFunc("/billing/v1/utilities", enableLog(utilities))
 	http.ListenAndServe(":4000", nil)
 }
 
@@ -85,7 +85,7 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := Billing{
-		Services: []string{
+		Utilities: []string{
 			"eletricidade",
 			"telefonia",
 			"internet",
@@ -104,7 +104,7 @@ func getToken(r *http.Request) (string, error) {
 	if token != "" {
 		auths := strings.Split(token, " ")
 		if len(auths) != 2 {
-			return "", fmt.Errorf("invalid Authorization header format")
+			return "", fmt.Errorf("Formato do cabeçalho Authorization inválido")
 		}
 		return auths[1], nil
 	}
@@ -124,7 +124,7 @@ func getToken(r *http.Request) (string, error) {
 	}
 
 	//Retorna erro se não tiver token em lugar nenhum
-	return token, fmt.Errorf("access token não informado")
+	return token, fmt.Errorf("Access token não informado")
 }
 
 func validateToken(token string) bool {

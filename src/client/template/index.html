@@ -98,9 +98,10 @@
 
           <div class="row">
             <div class="col-3 col-md-12 mb-2">
-              <a href="/services" class="btn btn-primary btn-lg px-4">Chamar Endpoint: Listar serviços</a>
+              <a href="/utilities" class="btn btn-primary btn-lg px-4">Chamar Endpoint: Listar serviços</a>
             </div>
-            {{ block "services" .Services }}
+            {{ block "utilities" .Utilities }}
+              &nbsp;
             {{ end }}
 
             {{.ErrorMessage}}
