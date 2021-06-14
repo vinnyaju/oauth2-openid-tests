@@ -93,6 +93,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	appVar = newAppVar()
 	req, err := http.NewRequest("GET", config.authURL, nil)
 	if err != nil {
 		log.Print(err)
@@ -109,6 +110,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	qs.Add("redirect_uri", config.authCodeCallback)
 
 	req.URL.RawQuery = qs.Encode()
+
 	http.Redirect(w, r, req.URL.String(), http.StatusFound)
 }
 
