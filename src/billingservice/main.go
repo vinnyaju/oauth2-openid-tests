@@ -94,6 +94,7 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 	}
 	encoder := json.NewEncoder(w)
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	encoder.Encode(s)
 }
 
@@ -181,6 +182,7 @@ func buildErrorMessage(w http.ResponseWriter, message string) {
 	s := &BillingError{Error: message}
 	encoder := json.NewEncoder(w)
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusBadRequest)
 	encoder.Encode(s)
 }
