@@ -68,7 +68,7 @@ func main() {
 	fmt.Println("OK")
 	http.HandleFunc("/", enableLog(home))
 	http.HandleFunc("/login", enableLog(login))
-	//http.HandleFunc("/exchangeToken", enableLog(exchangeToken))
+	http.HandleFunc("/refreshToken", enableLog(refreshToken))
 	http.HandleFunc("/utilities", enableLog(utilities))
 	http.HandleFunc("/logout", enableLog(logout))
 	http.HandleFunc("/authCodeRedirect", enableLog(authCodeRedirect))
@@ -107,6 +107,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 	qs.Add("state", stateMapIndex)
 	qs.Add("client_id", config.clientID)
 	qs.Add("response_type", "code")
+	//Parâmetros opcionais, escopo e o callback depois do login feito no IAM
+	qs.Add("scope", "getUtilitiesService")
 	qs.Add("redirect_uri", config.authCodeCallback)
 
 	req.URL.RawQuery = qs.Encode()
@@ -241,6 +243,7 @@ func utilities(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		appVar.Utilities = []string{}
 		appVar.ErrorMessage = errorResponse.Error
 		utilitiesTemplate.Execute(w, appVar)
 		return
@@ -266,4 +269,71 @@ func buildErrorMessage(w http.ResponseWriter, message string) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 	encoder.Encode(s)
+}
+
+func refreshToken(w http.ResponseWriter, r *http.Request) {
+	//Criar um request
+	form := url.Values{}
+	form.Add("grant_type", "refresh_token")
+	form.Add("refresh_token", appVar.RefreshToken)
+	log.Printf("Usando o RefreshToken: %v", appVar.RefreshToken)
+
+	req, err := http.NewRequest("POST", config.tokenIssuerURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	//Fazer um request
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(config.clientID, config.clientPWD)
+	//Client
+	c := http.Client{}
+	res, err := c.Do(req)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	//Processar a resposta
+	//Na resposta vem um novo Refresh Token, tem que descartar o antigo e usar o novo Refresh Token para pegar um novo Token
+
+	byteBody, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	body := &model.AccessTokenResponse{}
+	json.Unmarshal(byteBody, body)
+
+	if res.StatusCode != 200 {
+		log.Println("Status Code returned: ", res.StatusCode)
+		log.Println("Status returned: ", res.Status)
+		errorResponse := &model.ErrorResponse{}
+		err = json.Unmarshal(byteBody, errorResponse)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+
+		appVar.Utilities = []string{}
+		appVar.ErrorMessage = errorResponse.Error
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	} else {
+		appVar.ErrorMessage = ""
+	}
+
+	appVar.AccessToken = body.AccessToken
+	appVar.SessionState = body.SessionState
+	appVar.RefreshToken = body.RefreshToken
+	appVar.Scope = body.Scope
+
+	log.Printf("AccessToken: %v", appVar.AccessToken)
+	log.Printf("RefreshToken: %v", appVar.RefreshToken)
+	log.Printf("Scope: %v", appVar.Scope)
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
